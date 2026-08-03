@@ -16,12 +16,12 @@ TARGET_BASE_URL = "https://core-bs.ggpolarbear.com/live/ABHotUpdates/"
 VER_PHP_URL = "https://version.ggwhitehawk.com/live/ver.php"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PORT = 8080
-
+DATA_DIR = os.environ.get("DATA_DIR", BASE_DIR)
+PORT = int(os.environ.get("PORT", 8080))
 SERVE_CACHE_RES = "cache_res2"
-REGISTERED_FILE = os.path.join(BASE_DIR, "registered_ips.json")
-ENGAGED_FILE = os.path.join(BASE_DIR, "engaged_ips.json")
-KEYS_FILE = os.path.join(BASE_DIR, "keys.json")
+REGISTERED_FILE = os.path.join(DATA_DIR, "registered_ips.json")
+ENGAGED_FILE = os.path.join(DATA_DIR, "engaged_ips.json")
+KEYS_FILE = os.path.join(DATA_DIR, "keys.json")
 
 ADMIN_PATH = "/289fa1d93b1c5ee878dfb46bd0ebe447"
 ADMIN_USER = "LUNARXATHEX"
