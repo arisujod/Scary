@@ -1672,6 +1672,52 @@ def get_public_ip():
         except:
             return "Unable to get public IP"
 
+# ================= FIREBASE PERSISTENCE (S3) =================
+FIREBASE_CRED = os.environ.get("FIREBASE_CREDENTIALS", "")
+FIREBASE_URL = os.environ.get("FIREBASE_DB_URL", "")
+_fb = None
+try:
+    import firebase_admin
+    from firebase_admin import credentials as _fbc
+    from firebase_admin import db as _fbd
+    if FIREBASE_CRED and FIREBASE_URL:
+        firebase_admin.initialize_app(_fbc.Certificate(json.loads(FIREBASE_CRED)), {"databaseURL": FIREBASE_URL})
+        _fb = _fbd.reference("s3hacks")
+        print("[*] Firebase connected (s3 db)")
+except Exception as e:
+    print(f"[ERROR] Firebase init: {e}")
+
+if _fb is not None:
+    try:
+        _remote = _fb.get()
+        if _remote:
+            with open(DATA_FILE, "w") as _f:
+                json.dump(_remote, _f, indent=2)
+            print("[*] S3 data restored from Firebase")
+    except Exception as e:
+        print(f"[ERROR] Firebase restore: {e}")
+
+    _save_fn = globals().get("save_data") or globals().get("save_all") or globals().get("write_data")
+    if _save_fn:
+        def _wrapped_save(*a, **k):
+            _r = _save_fn(*a, **k)
+            try:
+                with open(DATA_FILE) as _f:
+                    _fb.set(json.load(_f))
+            except Exception as e:
+                print(f"[ERROR] Firebase push: {e}")
+            return _r
+        save_data = _wrapped_save
+        print(f"[*] Save function wrapped: {_save_fn.__name__}")
+    else:
+        print("[WARN] save function nahi mila - 'def save' search karke naam check karo")
+
+    try:
+        load_data()
+    except Exception:
+        pass
+# =============================================================
+
 if __name__ == "__main__":
     # Load existing data before starting
     load_data()
