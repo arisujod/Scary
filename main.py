@@ -342,7 +342,7 @@ footer .credit { display: flex; justify-content: center; gap: 16px; margin-botto
 __CONTENT__
   <footer>
     <div class="credit">
-      <a href="https://youtube.com/@hackinjectlab" target="_blank" rel="noopener" style="color:#fb7185;"><i class="fa-brands fa-youtube"></i>&nbsp; zaru_exe</a>
+      <a href="https://youtube.com/@hackinjectlab" target="_blank" rel="noopener" style="color:#fb7185;"><i class="fa-brands fa-youtube"></i>&nbsp; HackInjectLab</a>
       <a href="https://t.me/+A8lCW97ZSy1kZDE1" target="_blank" rel="noopener" style="color:#38bdf8;"><i class="fa-brands fa-telegram"></i>&nbsp; Join Telegram</a>
     </div>
     <i class="fa-solid fa-moon"></i> ARISU GPT PROXY &middot; v2.0 &middot; <i class="fa-solid fa-shield-halved"></i> FOR AUTHORIZED USE ONLY
