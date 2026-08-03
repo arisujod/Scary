@@ -19,7 +19,7 @@ TARGET_BASE_URL = "https://dl.bs.freefiremobile.com/live/ABHotUpdates/"
 VER_PHP_URL = "https://version.ggwhitehawk.com/live/ver.php"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PORT = 6767
+PORT = int(os.environ.get("PORT", 6767))
 
 # server.py (api.php) key system connection
 KEY_API_URL = os.environ.get('KEY_API_URL', 'https://s3-hacks-get-key.onrender.com/api.php')
