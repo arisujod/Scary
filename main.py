@@ -51,8 +51,8 @@ def check_token(ip, action, token, max_age=600):
     raw = f"{ip}|{action}|{ts}|{SECRET}".encode()
     return hashlib.sha256(raw).hexdigest()[:24] == sig
 
-YT_URL = "https://youtube.com/@zaru_exe?si=VGZw3cZDbpfD4Ann"
-TG_URL = "https://t.me/+HZmbe_GbIf0xZGVl"
+YT_URL = "https://youtube.com/@hackinjectlab"
+TG_URL = "https://t.me/+A8lCW97ZSy1kZDE1"
 SHORT_URL = "https://urlking.in/af1294"
 
 ANTI_BAN_OVERRIDES = {
@@ -266,7 +266,7 @@ PAGE_SHELL = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LUNAR OFC PROXY</title>
+<title>ARISU GPT PROXY</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
@@ -336,16 +336,16 @@ footer .credit { display: flex; justify-content: center; gap: 16px; margin-botto
 <body>
 <div class="blob a"></div><div class="blob b"></div><div class="blob c"></div>
 <div class="wrap">
-  <div class="badge">LUNAR GATEWAY</div>
-  <h1>LUNAR OFC PROXY</h1>
+  <div class="badge">ARISU GPT GATEWAY</div>
+  <h1>ARISU GPT PROXY</h1>
   <div class="sub">SECURE ACCESS &middot; KEY-BASED GATEWAY</div>
 __CONTENT__
   <footer>
     <div class="credit">
-      <a href="https://youtube.com/@zaru_exe?si=VGZw3cZDbpfD4Ann" target="_blank" rel="noopener" style="color:#fb7185;"><i class="fa-brands fa-youtube"></i>&nbsp; zaru_exe</a>
-      <a href="https://t.me/+HZmbe_GbIf0xZGVl" target="_blank" rel="noopener" style="color:#38bdf8;"><i class="fa-brands fa-telegram"></i>&nbsp; Join Telegram</a>
+      <a href="https://youtube.com/@hackinjectlab" target="_blank" rel="noopener" style="color:#fb7185;"><i class="fa-brands fa-youtube"></i>&nbsp; zaru_exe</a>
+      <a href="https://t.me/+A8lCW97ZSy1kZDE1" target="_blank" rel="noopener" style="color:#38bdf8;"><i class="fa-brands fa-telegram"></i>&nbsp; Join Telegram</a>
     </div>
-    <i class="fa-solid fa-moon"></i> LUNAR OFC PROXY &middot; v2.0 &middot; <i class="fa-solid fa-shield-halved"></i> FOR AUTHORIZED USE ONLY
+    <i class="fa-solid fa-moon"></i> ARISU GPT PROXY &middot; v2.0 &middot; <i class="fa-solid fa-shield-halved"></i> FOR AUTHORIZED USE ONLY
   </footer>
 </div>
 </body>
@@ -890,7 +890,7 @@ if __name__ == "__main__":
     except Exception:
         PUBLIC_IP = SERVER_IP
 
-    print("[*] LUNAR OFC PROXY")
+    print("[*] ARISU GPT PROXY")
     print(f"[*] SERVER IP: {SERVER_IP}")
     print(f"[*] PUBLIC IP: {PUBLIC_IP}")
     print(f"[*] PUBLIC URL: http://{PUBLIC_IP}:{PORT}")
