@@ -871,6 +871,51 @@ app.router.add_get('/{path:.*}', handle_cdn)
 app.on_startup.append(init_session)
 app.on_cleanup.append(cleanup_session)
 
+# ================= FIREBASE PERSISTENCE =================
+FIREBASE_CRED = os.environ.get("FIREBASE_CREDENTIALS", "")
+FIREBASE_URL = os.environ.get("FIREBASE_DB_URL", "")
+_fb = None
+try:
+    import firebase_admin
+    from firebase_admin import credentials as _fbc
+    from firebase_admin import db as _fbd
+    if FIREBASE_CRED and FIREBASE_URL:
+        firebase_admin.initialize_app(_fbc.Certificate(json.loads(FIREBASE_CRED)), {"databaseURL": FIREBASE_URL})
+        _fb = _fbd.reference("scary")
+        print("[*] Firebase connected (scary db)")
+except Exception as e:
+    print(f"[ERROR] Firebase init: {e}")
+
+if _fb is not None:
+    _FB_FILES = {"registered": REGISTERED_FILE, "engaged": ENGAGED_FILE, "keys": KEYS_FILE}
+
+    for _name, _path in _FB_FILES.items():
+        try:
+            _r = _fb.child(_name).get()
+            if _r is not None:
+                with open(_path, "w") as _f:
+                    json.dump(_r, _f, indent=2)
+        except Exception as e:
+            print(f"[ERROR] restore {_name}: {e}")
+    load_registered(); load_engaged(); load_keys()
+
+    def _mirror(name):
+        try:
+            with open(_FB_FILES[name]) as _f:
+                _fb.child(name).set(json.load(_f))
+        except Exception as e:
+            print(f"[ERROR] push {name}: {e}")
+
+    _sr, _se, _sk = save_registered, save_engaged, save_keys
+    def save_registered():
+        _sr(); _mirror("registered")
+    def save_engaged():
+        _se(); _mirror("engaged")
+    def save_keys():
+        _sk(); _mirror("keys")
+# ==========================================================
+
+
 SERVER_IP = "localhost"
 
 if __name__ == "__main__":
