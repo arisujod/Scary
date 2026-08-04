@@ -148,6 +148,7 @@ function ld(){fetch('/admin/data').then(r=>r.json()).then(d=>{
 });}
 async function gK(){m('kM',true,'Generating...');const d=await api('/admin/key',{duration:+document.getElementById('kD').value,limit:+document.getElementById('kL').value});if(d.ok){m('kM',true,'Done');showKey(d.key);ld();}else m('kM',false,d.error);}
 async function aA(u,k){if(!confirm('Confirm?'))return;const d=await api(u,{key:k});if(d.ok)ld();else alert(d.error);}
+  async function addRes(){m('rM',true,'Adding...');const d=await api('/admin/reseller/add',{id:document.getElementById('rI').value.trim(),pass:document.getElementById('rP').value,credits:+document.getElementById('rC').value});if(d.ok){m('rM',true,'Reseller added ✅');ld();}else m('rM',false,d.error);}
 async function aR(u,id){const d=await api(u,{id});if(d.ok)ld();else alert(d.error);}
 async function aRt(){m('rtM',true,'Adding...');const d=await api('/admin/rate/add',{duration:+document.getElementById('rtD').value,cost:+document.getElementById('rtC').value});if(d.ok){m('rtM',true,'Added');ld();}else m('rtM',false,d.error);}
 async function bT(u,txt,b){if(!confirm(txt))return;b.disabled=true;const d=await api(u,{});m('bM',d.ok,d.ok?'Done':(d.error||'Failed'));b.disabled=false;ld();}
