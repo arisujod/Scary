@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Gpt · Proxy Access{% endblock %}
+{% block body %}
+<div class="center">
+<div class="card" style="max-width:420px;width:100%">
+<div class="logo"><i class="fas fa-key"></i></div>
+<h1 class="brand-title">G<span class="grad">pt</span></h1>
+<div class="sub">PROXY ACCESS</div>
+<input id="key" placeholder="Gpt-XXXX">
+<button class="btn" onclick="act()"><i class="fas fa-unlock"></i> Activate</button>
+<div id="msg" class="msg"></div>
+<div style="margin-top:16px;display:flex;flex-direction:column;gap:9px">
+<a class="btn ghost" style="margin:0" href="{{ TG_URL }}" target="_blank"><i class="fab fa-telegram"></i> Join Telegram</a>
+<a class="btn ghost" style="margin:0" href="{{ YT_URL }}" target="_blank"><i class="fab fa-youtube"></i> Subscribe YouTube</a>
+<a class="btn ghost" style="margin:0" href="{{ IG_URL }}" target="_blank"><i class="fab fa-instagram"></i> Follow Instagram</a>
+</div>
+<div class="sub" style="margin-top:18px;margin-bottom:0">● SECURE · VERIFIED</div>
+</div>
+</div>
+<script>
+async function act(){
+m('msg',true,'Activating...');
+const d=await api('/api/activate',{key:document.getElementById('key').value.trim()});
+if(d.ok){m('msg',true,'Activated! Redirecting...');setTimeout(()=>location.href='/dashboard',700);}
+else m('msg',false,d.error||'Failed');
+}
+</script>
+{% endblock %}
