@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Gpt · Reseller{% endblock %}
+{% block body %}
+<div class="panel">
+  <aside class="side">
+    <div class="brand"><div class="logo"><i class="fas fa-store"></i></div> G<span class="grad">pt</span></div>
+    <nav class="nav">
+      <button class="on" onclick="s('dash',this)"><i class="fas fa-gauge-high"></i> Dashboard</button>
+      <button onclick="s('key',this)"><i class="fas fa-key"></i> Generate Key</button>
+      <button onclick="s('my',this)"><i class="fas fa-users"></i> My Users</button>
+      <button onclick="s('bulk',this)"><i class="fas fa-bolt"></i> Bulk Tools</button>
+    </nav>
+    <div class="foot">
+      <a href="/reseller/logout" class="btn danger" style="margin:0"><i class="fas fa-power-off"></i> Logout</a>
+    </div>
+  </aside>
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <section id="dash" class="sec">
+      <h2 style="margin-bottom:14px">MY DASHBOARD</h2>
+      <div class="grid">
+        <div class="stat"><b id="s_c" class="grad">0</b><span>My Credits</span></div>
+        <div class="stat"><b id="s_k">0</b><span>My Keys</span></div>
+        <div class="stat"><b id="s_u">0</b><span>Active Users</span></div>
+        <div class="stat"><b id="s_e">0</b><span>Expired</span></div>
+      </div>
+      <div class="box">
+        <h3>Rate Card</h3>
+        <div style="overflow-x:auto"><table id="rCard"><thead><tr><th>Duration</th><th>Cost</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- GENERATE KEY -->
+    <section id="key" class="sec" style="display:none">
+      <h2 style="margin-bottom:14px">GENERATE KEY</h2>
+      <div class="box">
+        <h3>New Key</h3>
+        <select id="kD" onchange="uP()">
+          <option value="180">3 Hours</option>
+          <option value="1440">1 Day</option>
+          <option value="10080">7 Days</option>
+          <option value="43200" selected>30 Days</option>
+          <option value="99999999">Lifetime</option>
+        </select>
+        <input id="kL" type="number" min="1" value="1" placeholder="IP Limit">
+        <div class="hint">Cost: <b id="cost" class="grad">1 credit</b> — Balance: <b id="bal" class="grad">0</b></div>
+        <button class="btn" onclick="gK()"><i class="fas fa-wand-magic-sparkles"></i> Generate</button>
+        <div id="kM" class="msg"></div>
+      </div>
+    </section>
+
+    <!-- MY USERS -->
+    <section id="my" class="sec" style="display:none">
+      <h2 style="margin-bottom:14px">MY USERS</h2>
+      <div class="box">
+        <h3>My Keys</h3>
+        <div style="overflow-x:auto"><table id="mT"><thead><tr><th>Key</th><th>IPs</th><th>Limit</th><th>Expires</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- BULK -->
+    <section id="bulk" class="sec" style="display:none">
+      <h2 style="margin-bottom:14px">BULK TOOLS</h2>
+      <div class="box">
+        <h3>My Bulk Actions</h3>
+        <button class="btn danger" onclick="bT('/reseller/delete-expired','Delete my EXPIRED keys?',this)"><i class="fas fa-trash"></i> Delete Expired Keys</button>
+        <button class="btn ghost" onclick="bT('/reseller/reset-all','Reset IPs of ALL my keys?',this)"><i class="fas fa-rotate"></i> Reset All My IPs</button>
+        <div id="bM" class="msg"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+<script>
+const DUR={180:'3h',1440:'1d',10080:'7d',43200:'30d',99999999:'Lifetime'};
+let RATES={},CREDITS=0;
+function s(id,b){document.querySelectorAll('.sec').forEach(x=>x.style.display='none');document.getElementById(id).style.display='';document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');if(id==='dash'||id==='my')ld();}
+function ld(){fetch('/reseller/data').then(r=>r.json()).then(d=>{
+  CREDITS=d.credits;RATES={};d.rates.forEach(r=>RATES[r.duration]=r.cost);
+  document.getElementById('s_c').textContent=d.credits;
+  document.getElementById('s_k').textContent=d.keys.length;
+  document.getElementById('s_u').textContent=d.keys.filter(k=>!k.expired).length;
+  document.getElementById('s_e').textContent=d.keys.filter(k=>k.expired).length;
+  document.getElementById('bal').textContent=d.credits;
+  const rc=d.rates.map(r=>`<tr><td>${DUR[r.duration]||r.duration}</td><td>${r.cost}</td></tr>`).join('');
+  document.querySelector('#rCard tbody').innerHTML=rc||'<tr><td colspan="2">No rates set</td></tr>';
+  const mt=d.keys.map(k=>`<tr><td>${k.key}</td><td>${k.used}</td><td>${k.limit}</td><td>${k.expired?'EXPIRED':(k.exp||'-')}</td><td><button class="btn small ghost" onclick="aA('/reseller/reset','${k.key}')">Reset IPs</button></td></tr>`).join('');
+  document.querySelector('#mT tbody').innerHTML=mt||'<tr><td colspan="5">No keys yet</td></tr>';
+  uP();
+});}
+function uP(){const dur=+document.getElementById('kD').value;const c=RATES[dur]||0;document.getElementById('cost').textContent=c+' credits';}
+async function gK(){m('kM',true,'Generating...');const d=await api('/reseller/key',{duration:+document.getElementById('kD').value,limit:+document.getElementById('kL').value});if(d.ok){m('kM',true,'Done — '+d.cost+' credits used');showKey(d.key);ld();}else m('kM',false,d.error);}
+async function aA(u,k){const d=await api(u,{key:k});if(d.ok)ld();else alert(d.error);}
+async function bT(u,txt,b){if(!confirm(txt))return;b.disabled=true;const d=await api(u,{});m('bM',d.ok,d.ok?'Done':(d.error||'Failed'));b.disabled=false;ld();}
+ld();
+</script>
+{% endblock %}
