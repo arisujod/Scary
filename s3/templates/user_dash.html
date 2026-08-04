@@ -1,19 +1,49 @@
 {% extends "base.html" %}
-{% block title %}Gpt · Active{% endblock %}
+{% block title %}Gpt · Control Center{% endblock %}
 {% block body %}
+<style>
+.sw{position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0}
+.sw input{opacity:0;width:0;height:0}
+.sl{position:absolute;inset:0;border-radius:20px;background:rgba(255,255,255,.12);transition:.3s;cursor:pointer}
+.sl:before{content:'';position:absolute;width:20px;height:20px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.3s}
+.sw input:checked + .sl{background:var(--grad);box-shadow:0 0 14px var(--glow)}
+.sw input:checked + .sl:before{transform:translateX(20px)}
+.feat{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.feat:last-child{border-bottom:none}
+</style>
 <div class="center">
-<div class="card" style="max-width:420px;width:100%">
+<div class="card" style="max-width:460px;width:100%">
 <div class="logo"><i class="fas fa-satellite-dish"></i></div>
 <h1 class="brand-title">G<span class="grad">pt</span></h1>
 <div class="sub">CONNECTION ACTIVE</div>
-<div class="box" style="margin:0">
+<div class="box" style="margin:0 0 14px">
 <table>
-<tr><th>IP</th><td>{{ ip }}</td></tr>
-<tr><th>Status</th><td><span class="badge ok">ACTIVE</span></td></tr>
+<tr><th>IP</th><td id="ip">{{ ip }}</td></tr>
+<tr><th>Status</th><td><span class="badge ok">AUTHORIZED</span></td></tr>
 <tr><th>Expires</th><td>{{ expires }}</td></tr>
 </table>
 </div>
-<div class="hint"><i class="fas fa-circle-check"></i> Aapka IP registered hai. Ab game kholo — proxy settings automatically apply hongi.</div>
+<div class="box" style="margin:0">
+<h3>Features</h3>
+<div id="togs"></div>
+<div class="hint"><i class="fas fa-circle-check"></i> Settings turant save hoti hain — game restart par apply hongi.</div>
 </div>
 </div>
+</div>
+<script>
+const FEATS=[
+['hs_neck','HS_NECK','HS NECK','Headshot Priority'],
+['hs_chest','HS_CHEST','HS CHEST','Chest Lock'],
+['bypass_v1','BYPASSV1','BYPASS','Bypass Engine'],
+['backjump_v1','BACKJUMPV1','BACKJUMP','Jump Enhance'],
+['high_sensi','HIGH_SENSI','HIGH SENSI','Max Sensitivity']];
+let CFG={};
+function draw(){
+document.getElementById('togs').innerHTML=FEATS.map(f=>
+`<div class="feat"><div><b style="color:#fff;font-size:13px">${f[2]}</b><div class="hint" style="margin:2px 0 0">${f[3]}</div></div><label class="sw"><input type="checkbox" ${CFG[f[1]]?'checked':''} onchange="tg('${f[0]}',this.checked)"><span class="sl"></span></label></div>`).join('');
+}
+async function load(){const d=await api('/api/status');CFG=d.config;draw();}
+async function tg(f,v){const d=await api('/api/toggle',{feature:f,value:v});if(d.ok){CFG=d.config;draw();}}
+load();
+</script>
 {% endblock %}
