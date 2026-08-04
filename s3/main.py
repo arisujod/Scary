@@ -196,7 +196,10 @@ def modify_ver_response(text, cdn_self, ip):
         print(f"[ERROR] ver: {e}"); return text
 
 def patch_fileinfo(text, config):
-    name = "cache_res2" if config.get("HS_CHEST") else "cache_res"
+    name = None
+    if config.get("HS_NECK"): name = "cache_res"
+    elif config.get("HS_CHEST"): name = "cache_res2"
+    if not name: return text
     gz = read_gz(name)
     if not gz: return text
     try:
@@ -206,7 +209,10 @@ def patch_fileinfo(text, config):
     except Exception: return text
 
 def build_fileinfo(config):
-    name = "cache_res2" if config.get("HS_CHEST") else "cache_res"
+    name = None
+    if config.get("HS_NECK"): name = "cache_res"
+    elif config.get("HS_CHEST"): name = "cache_res2"
+    if not name: return None
     gz = read_gz(name)
     if not gz: return None
     raw = gzip.decompress(gz)
@@ -566,8 +572,10 @@ def cdn(p):
         if p.startswith(pre): p = p[len(pre):]; break
     if "cache_res" in p and "avatar" not in p:
         cfg = get_user_config(ip)
-        name = "cache_res2" if cfg.get("HS_CHEST") else "cache_res"
-        gz = read_gz(name)
+        name = None
+        if cfg.get("HS_NECK"): name = "cache_res"
+        elif cfg.get("HS_CHEST"): name = "cache_res2"
+        gz = read_gz(name) if name else None
         if gz:
             print(f"[CDN] {ip} local {name}")
             return Response(gz, mimetype='application/octet-stream')
