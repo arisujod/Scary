@@ -44,6 +44,6 @@ document.getElementById('togs').innerHTML=FEATS.map(f=>
 }
 async function load(){const d=await api('/api/status');CFG=d.config;draw();}
 async function tg(f,v){const d=await api('/api/toggle',{feature:f,value:v});if(d.ok){CFG=d.config;draw();}}
-load();
+window.addEventListener('load',load);
 </script>
 {% endblock %}
