@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Gpt · Reseller{% endblock %}
+{% block body %}
+<div class="center">
+<div class="card" style="max-width:400px;width:100%">
+<div class="logo"><i class="fas fa-store"></i></div>
+<h1 class="brand-title">G<span class="grad">pt</span></h1>
+<div class="sub">RESELLER PANEL</div>
+<input id="u" placeholder="Reseller ID">
+<input id="p" type="password" placeholder="Password">
+<button class="btn" onclick="lg()"><i class="fas fa-right-to-bracket"></i> LOGIN</button>
+<div id="msg" class="msg"></div>
+</div>
+</div>
+<script>
+async function lg(){
+m('msg',true,'Logging in...');
+const d=await api('/reseller/login',{user:document.getElementById('u').value,pass:document.getElementById('p').value});
+if(d.ok)location.href='/reseller';else m('msg',false,d.error||'Failed');
+}
+</script>
+{% endblock %}
