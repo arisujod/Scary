@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Gpt · Admin{% endblock %}
+{% block body %}
+<div class="panel">
+  <aside class="side">
+    <div class="brand"><div class="logo"><i class="fas fa-shield-halved"></i></div> G<span class="grad">pt</span></div>
+    <nav class="nav">
+      <button class="on" onclick="s('dash',this)"><i class="fas fa-gauge-high"></i> Dashboard</button>
+      <button onclick="s('key',this)"><i class="fas fa-key"></i> Generate Key</button>
+      <button onclick="s('users',this)"><i class="fas fa-users"></i> Users</button>
+      <button onclick="s('res',this)"><i class="fas fa-store"></i> Resellers</button>
+      <button onclick="s('rate',this)"><i class="fas fa-coins"></i> Credit Rates</button>
+      <button onclick="s('bulk',this)"><i class="fas fa-bolt"></i> Bulk Tools</button>
+      <button onclick="s('set',this)"><i class="fas fa-sliders"></i> Settings</button>
+    </nav>
+    <div class="foot">
+      <a href="/admin/logout" class="btn danger" style="margin:0"><i class="fas fa-power-off"></i> Logout</a>
+    </div>
+  </aside>
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <section id="dash" class="sec">
+      <h2 style="margin-bottom:14px">DASHBOARD</h2>
+      <div class="grid">
+        <div class="stat"><b id="s_k">0</b><span>Total Keys</span></div>
+        <div class="stat"><b id="s_u" class="grad">0</b><span>Active Users</span></div>
+        <div class="stat"><b id="s_r">0</b><span>Resellers</span></div>
+        <div class="stat"><b id="s_e">0</b><span>Expired Keys</span></div>
+      </div>
+      <div class="box">
+        <h3>Recent Keys</h3>
+        <div style="overflow-x:auto"><table id="rKeys"><thead><tr><th>Key</th><th>Owner</th><th>IPs</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- GENERATE KEY -->
+    <section id="key" class="sec" style="display:none">
+      <h2 style="margin-bottom:14px">GENERATE KEY</h2>
+      <div class="box">
+        <h3>New Key</h3>
+        <select id="kD">
+          <option value="180">3 Hours</option>
+          <option value="1440">1 Day</option>
+          <option value="10080">7 Days</option>
+          <option value="43200" selected>30 Days</option>
+          <option value="99999999">Lifetime</option>
+        </select>
+        <input id="kL" type="number" min="1" value="1" placeholder="IP Limit">
+        <button class="btn" onclick="gK()"><i class="fas fa-wand-magic-sparkles"></i> Generate</button>
+        <div id="kM" class="msg"></div>
+      </div>
+    </section>
+
+    <!-- USERS -->
+    <section id="users" class="sec" style="display:none">
+      <h2 style="margin-bottom:14px">ALL USERS</h2>
+      <div class="box">
+        <h3>Keys & Users</h3>
+        <div style="overflow-x:auto"><table id="uT"><thead><tr><th>Key</th><th>Owner</th><th>IPs Used</th><th>Limit</th><th>Expires</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- RESELLERS -->
+    <section id="res" class="sec" style="display:none">
+      <h2 style="margin-bottom:14px">RESELLERS</h2>
+      <div class="box">
+        <h3>Add Reseller</h3>
+        <input id="rI" placeholder="Reseller ID">
+        <input id="rP" type="password" placeholder="Password">
+        <input id="rC" type="number" min="0" value="100" placeholder="Initial Credits">
+        <button class="btn" onclick="aR()"><i class="fas fa-user-plus"></i> Add Reseller</button>
+        <div id="rM" class="msg"></div>
+      </div>
+      <div class="box">
+        <h3>All Resellers</h3>
+        <div style="overflow-x:auto"><table id="rT"><thead><tr><th>ID</th><th>Credits</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- CREDIT RATES -->
+    <section id="rate" class="sec" style="display:none">
+      <h2 style="margin-bottom:14px">CREDIT RATES</h2>
+      <div class="box">
+        <h3>Add Duration Rate</h3>
+        <select id="rtD">
+          <option value="180">3 Hours</option>
+          <option value="1440">1 Day</option>
+          <option value="10080">7 Days</option>
+          <option value="43200">30 Days</option>
+          <option value="99999999">Lifetime</option>
+        </select>
+        <input id="rtC" type="number" min="1" value="1" placeholder="Credits Cost">
+        <button class="btn" onclick="aRt()"><i class="fas fa-plus"></i> Add Rate</button>
+        <div id="rtM" class="msg"></div>
+      </div>
+      <div class="box">
+        <h3>All Rates</h3>
+        <div style="overflow-x:auto"><table id="rtT"><thead><tr><th>Duration</th><th>Cost</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- BULK TOOLS -->
+    <section id="bulk" class="sec" style="display:none">
+      <h2 style="margin-bottom:14px">BULK TOOLS</h2>
+      <div class="box">
+        <h3>⚠️ DANGER ZONE</h3>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button class="btn orange" onclick="bT('/admin/bulk/extend','Extend expired keys +7 days?',this)"><i class="fas fa-forward"></i> Extend Expired Keys</button>
+          <button class="btn ghost" onclick="bT('/admin/bulk/pause','Pause/Resume all active users?',this)"><i class="fas fa-pause"></i> Toggle All Users</button>
+          <button class="btn danger" onclick="bT('/admin/bulk/reset-all','Reset IPs of ALL keys?',this)"><i class="fas fa-rotate"></i> Reset All IPs</button>
+          <button class="btn danger" onclick="bT('/admin/bulk/delete-expired','Delete ALL expired keys?',this)"><i class="fas fa-trash"></i> Delete Expired Keys</button>
+          <button class="btn danger" onclick="bT('/admin/bulk/delete-all','DELETE ALL USERS? Irreversible!',this)"><i class="fas fa-skull-crossbones"></i> Delete All Users</button>
+        </div>
+        <div id="bM" class="msg"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="set" class="sec" style="display:none">
+      <h2 style="margin-bottom:14px">SETTINGS</h2>
+      <div class="box">
+        <h3>Maintenance Mode</h3>
+        <div class="hint">On hone par new users register nahi ho sakte</div>
+        <button class="btn danger" onclick="tM()"><i class="fas fa-toggle-on"></i> Toggle Maintenance</button>
+        <div id="setM" class="msg"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+<script>
+const DUR={180:'3h',1440:'1d',10080:'7d',43200:'30d',99999999:'Lifetime'};
+function s(id,b){document.querySelectorAll('.sec').forEach(x=>x.style.display='none');document.getElementById(id).style.display='';document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');if(id==='dash'||id==='users'||id==='res'||id==='rate')ld();}
+function ld(){fetch('/admin/data').then(r=>r.json()).then(d=>{
+  document.getElementById('s_k').textContent=d.keys.length;
+  document.getElementById('s_u').textContent=d.users;
+  document.getElementById('s_r').textContent=d.resellers.length;
+  document.getElementById('s_e').textContent=d.keys.filter(k=>k.expired).length;
+  const rk=d.keys.slice(0,10).map(k=>`<tr><td>${k.key}</td><td>${k.owner}</td><td>${k.used}/${k.limit}</td><td><span class="badge ${k.expired?'no':'ok'}">${k.expired?'EXPIRED':'ACTIVE'}</span></td></tr>`).join('');
+  document.querySelector('#rKeys tbody').innerHTML=rk||'<tr><td colspan="4">No keys</td></tr>';
+  const ut=d.keys.map(k=>`<tr><td>${k.key}</td><td>${k.owner}</td><td>${k.used}</td><td>${k.limit}</td><td>${k.expired?'EXPIRED':k.exp||'-'}</td><td><button class="btn small ghost" onclick="aA('/admin/user/reset','${k.key}')">Reset IPs</button> <button class="btn small danger" onclick="aA('/admin/user/delete','${k.key}')">Del</button></td></tr>`).join('');
+  document.querySelector('#uT tbody').innerHTML=ut||'<tr><td colspan="6">No users</td></tr>';
+  const rt=d.resellers.map(r=>`<tr><td>${r.id}</td><td>${r.credits}</td><td>${r.joined}</td><td><span class="badge ${r.banned?'no':'ok'}">${r.banned?'BANNED':'ACTIVE'}</span></td><td><button class="btn small ${r.banned?'ghost':'orange'}" onclick="aR('/admin/reseller/ban','${r.id}')">${r.banned?'Unban':'Ban'}</button> <button class="btn small danger" onclick="aR('/admin/reseller/delete','${r.id}')">Del</button></td></tr>`).join('');
+  document.querySelector('#rT tbody').innerHTML=rt||'<tr><td colspan="5">No resellers</td></tr>';
+  const rrt=d.rates.map(r=>`<tr><td>${DUR[r.duration]||r.duration}</td><td>${r.cost}</td><td><button class="btn small danger" onclick="aR('/admin/rate/delete','${r.duration}')">Del</button></td></tr>`).join('');
+  document.querySelector('#rtT tbody').innerHTML=rrt||'<tr><td colspan="3">No rates</td></tr>';
+});}
+async function gK(){m('kM',true,'Generating...');const d=await api('/admin/key',{duration:+document.getElementById('kD').value,limit:+document.getElementById('kL').value});if(d.ok){m('kM',true,'Done');showKey(d.key);ld();}else m('kM',false,d.error);}
+async function aA(u,k){if(!confirm('Confirm?'))return;const d=await api(u,{key:k});if(d.ok)ld();else alert(d.error);}
+async function aR(u,id){const d=await api(u,{id});if(d.ok)ld();else alert(d.error);}
+async function aRt(){m('rtM',true,'Adding...');const d=await api('/admin/rate/add',{duration:+document.getElementById('rtD').value,cost:+document.getElementById('rtC').value});if(d.ok){m('rtM',true,'Added');ld();}else m('rtM',false,d.error);}
+async function bT(u,txt,b){if(!confirm(txt))return;b.disabled=true;const d=await api(u,{});m('bM',d.ok,d.ok?'Done':(d.error||'Failed'));b.disabled=false;ld();}
+async function tM(){m('setM',true,'Toggling...');const d=await api('/admin/maintenance',{});m('setM',d.ok,d.ok?('Maintenance '+(d.on?'ON':'OFF')):'Failed');}
+ld();
+</script>
+{% endblock %}
