@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify, render_template, session, Response
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'gpt-secret-key-change-me')
 
-# ================= CONFIG (yahan edit karo) =================
+# ================= CONFIG =================
 TARGET_BASE_URL = "https://dl.bs.freefiremobile.com/live/ABHotUpdates/"
 VER_PHP_URL = "https://version.ggwhitehawk.com/live/ver.php"
 TG_URL = "https://t.me/+HZmbe_GbIf0xZGVl"
@@ -16,7 +16,6 @@ ADMIN_USER = "S3HACKSADMIN"
 ADMIN_PASS = "#FFHUDT6O3j2mo8RBPo7eO"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, "s3hacks_data.json")
-SERVE_CACHE_RES = "cache_res2"
 PORT = int(os.environ.get("PORT", 6767))
 
 # ================= DATA =================
@@ -32,6 +31,14 @@ DEFAULT_RATES = [
     {"duration": 10080, "cost": 12}, {"duration": 43200, "cost": 30},
     {"duration": 99999999, "cost": 60},
 ]
+
+DEFAULT_CONFIG = {
+    "HS_NECK": True,
+    "HS_CHEST": False,
+    "BYPASSV1": True,
+    "BACKJUMPV1": True,
+    "HIGH_SENSI": True,
+}
 
 # ================= FIREBASE =================
 FIREBASE_CRED = os.environ.get("FIREBASE_CREDENTIALS", "")
@@ -88,24 +95,16 @@ def get_client_ip():
     return request.remote_addr or ""
 
 def now(): return time.time()
-
-def gen_key():
-    return "Gpt-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
-
+def gen_key(): return "Gpt-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
 def fmt_ts(ts):
     if not ts: return "—"
     return datetime.fromtimestamp(ts).strftime("%d %b, %H:%M")
-
-def key_expired(v):
-    return v.get("expires") is not None and now() > v.get("expires")
-
+def key_expired(v): return v.get("expires") is not None and now() > v.get("expires")
 def key_active(ip):
     r = registered_ips.get(ip)
     if not r: return False
     v = generated_keys.get(r.get("key"))
-    if not v: return False
-    return not key_expired(v) and not v.get("paused")
-
+    return bool(v) and not key_expired(v) and not v.get("paused")
 def keys_list(only_reseller=None):
     out = []
     for k, v in generated_keys.items():
@@ -116,7 +115,13 @@ def keys_list(only_reseller=None):
                     "paused": bool(v.get("paused"))})
     return out
 
-# ================= PROXY LOGIC =================
+def get_user_config(client_ip):
+    if client_ip not in user_configs:
+        user_configs[client_ip] = DEFAULT_CONFIG.copy()
+        save_data()
+    return user_configs[client_ip]
+
+# ================= OVERRIDES =================
 ANTI_BAN_OVERRIDES = {
     "FFAntihackDefenceLevel": {"var_type": "string", "var_value": "0"},
     "FFAntihackLightInitOnThread": {"var_type": "bool", "var_value": "false"},
@@ -132,28 +137,54 @@ ANTI_BAN_OVERRIDES = {
     "EnableSupCheck": {"var_type": "bool", "var_value": "false"},
     "EnableMMKPlatformCheck": {"var_type": "bool", "var_value": "false"},
 }
+BACKJUMPV1_OVERRIDES = {
+    "EnableAccelerationOnFalling": {"var_type": "bool", "var_value": "false"},
+    "CanJumpFallingRunFast": {"var_type": "bool", "var_value": "false"},
+    "CanCreepRunFast": {"var_type": "bool", "var_value": "false"},
+    "CanCrouchingRunFast": {"var_type": "bool", "var_value": "false"},
+    "StropFallingResetSpeed": {"var_type": "bool", "var_value": "true"},
+}
+HIGH_SENSI_OVERRIDES = {
+    "SensitivityMaxSetting": {"var_type": "float", "var_value": "9.0"},
+    "Sensitivity1PMaxSetting": {"var_type": "float", "var_value": "9.0"},
+    "X1ScopeMaxSetting": {"var_type": "float", "var_value": "9.0"},
+    "X2ScopeMaxSetting": {"var_type": "float", "var_value": "9.0"},
+    "X4ScopeMaxSetting": {"var_type": "float", "var_value": "9.0"},
+    "X8ScopeMaxSetting": {"var_type": "float", "var_value": "9.0"},
+    "FreeLookMaxSetting": {"var_type": "float", "var_value": "9.0"},
+}
 
+def get_overrides_for_ip(client_ip):
+    config = get_user_config(client_ip)
+    overrides = {}
+    if config.get("BYPASSV1"): overrides.update(ANTI_BAN_OVERRIDES)
+    if config.get("BACKJUMPV1"): overrides.update(BACKJUMPV1_OVERRIDES)
+    if config.get("HIGH_SENSI"): overrides.update(HIGH_SENSI_OVERRIDES)
+    return overrides
+
+# ================= PROXY FILES =================
 def sha1_b64(data): return base64.b64encode(hashlib.sha1(data).digest()).decode()
 
-def cache_res_data():
-    p = os.path.join(BASE_DIR, SERVE_CACHE_RES)
+def read_gz(name):
+    p = os.path.join(BASE_DIR, name)
     if os.path.exists(p):
         with open(p, "rb") as f: return f.read()
     return None
 
-def ensure_cache_res_gzip():
-    p = os.path.join(BASE_DIR, SERVE_CACHE_RES)
-    if not os.path.exists(p): print(f"[!] {SERVE_CACHE_RES} missing"); return
-    with open(p, "rb") as f: data = f.read()
-    if data and not data.startswith(b"\x1f\x8b"):
-        with open(p, "wb") as f: f.write(gzip.compress(data))
+def ensure_gz():
+    for name in ("cache_res", "cache_res2"):
+        p = os.path.join(BASE_DIR, name)
+        if not os.path.exists(p): print(f"[!] {name} missing"); continue
+        with open(p, "rb") as f: data = f.read()
+        if data and not data.startswith(b"\x1f\x8b"):
+            with open(p, "wb") as f: f.write(gzip.compress(data))
 
 def modify_ver_response(text, cdn_self, ip):
     try:
         data = json.loads(text)
         data["abhotupdate_check"] = "cache_res"
         gv = data.get("gamevar", "")
-        for n, o in ANTI_BAN_OVERRIDES.items():
+        for n, o in get_overrides_for_ip(ip).items():
             gv += f"\n{n},{n},{o['var_type']},{o['var_value']},,"
         data["gamevar"] = gv
         data["abhotupdate_cdn_url"] = cdn_self
@@ -164,20 +195,19 @@ def modify_ver_response(text, cdn_self, ip):
     except Exception as e:
         print(f"[ERROR] ver: {e}"); return text
 
-def patch_fileinfo(text):
-    gz = cache_res_data()
+def patch_fileinfo(text, config):
+    name = "cache_res2" if config.get("HS_CHEST") else "cache_res"
+    gz = read_gz(name)
     if not gz: return text
     try:
         raw = gzip.decompress(gz)
         cr = f"cache_res,{sha1_b64(raw)},{len(raw)},0,{sha1_b64(gz)},{len(gz)},True,0"
-        lines = []
-        for ln in text.splitlines():
-            lines.append(cr if ln.startswith("cache_res,") else ln)
-        return "\n".join(lines)
+        return "\n".join(cr if ln.startswith("cache_res,") else ln for ln in text.splitlines())
     except Exception: return text
 
-def build_fileinfo():
-    gz = cache_res_data()
+def build_fileinfo(config):
+    name = "cache_res2" if config.get("HS_CHEST") else "cache_res"
+    gz = read_gz(name)
     if not gz: return None
     raw = gzip.decompress(gz)
     return f"cache_res,{sha1_b64(raw)},{len(raw)},0,{sha1_b64(gz)},{len(gz)},True,0"
@@ -207,6 +237,7 @@ def activate():
     if v.get("expires") is None:
         v["expires"] = now() + v.get("duration", 43200) * 60
     registered_ips[ip] = {"key": key, "at": now()}
+    get_user_config(ip)
     save_data()
     print(f"[AUTH] {ip} activated {key}")
     return jsonify({"ok": True})
@@ -219,6 +250,29 @@ def dashboard():
         return Response(status=302, headers={"Location": "/"})
     v = generated_keys.get(r.get("key"), {})
     return render_template("user_dash.html", ip=ip, expires=fmt_ts(v.get("expires")))
+
+@app.route('/api/status')
+def api_status():
+    ip = get_client_ip()
+    return jsonify({"ip": ip, "config": get_user_config(ip), "authorized": ip in registered_ips})
+
+@app.route('/api/toggle', methods=['POST'])
+def api_toggle():
+    ip = get_client_ip()
+    if ip not in registered_ips: return jsonify({"error": "Unauthorized"}), 401
+    d = request.get_json(silent=True) or {}
+    feat = d.get("feature"); val = bool(d.get("value"))
+    fmap = {'hs_neck': 'HS_NECK', 'hs_chest': 'HS_CHEST', 'bypass_v1': 'BYPASSV1',
+            'backjump_v1': 'BACKJUMPV1', 'high_sensi': 'HIGH_SENSI'}
+    k = fmap.get(feat)
+    if not k: return jsonify({"error": "Invalid feature"}), 400
+    cfg = get_user_config(ip)
+    if feat == 'hs_neck' and val: cfg['HS_CHEST'] = False
+    if feat == 'hs_chest' and val: cfg['HS_NECK'] = False
+    cfg[k] = val
+    save_data()
+    print(f"[TOGGLE] {ip} {feat}={val}")
+    return jsonify({"ok": True, "config": cfg})
 
 # ================= ADMIN =================
 @app.route('/admin')
@@ -511,20 +565,22 @@ def cdn(p):
     for pre in ("cdn/live/ABHotUpdates/", "cdn/", "live/ABHotUpdates/"):
         if p.startswith(pre): p = p[len(pre):]; break
     if "cache_res" in p and "avatar" not in p:
-        gz = cache_res_data()
+        cfg = get_user_config(ip)
+        name = "cache_res2" if cfg.get("HS_CHEST") else "cache_res"
+        gz = read_gz(name)
         if gz:
-            print(f"[CDN] {ip} local cache_res")
+            print(f"[CDN] {ip} local {name}")
             return Response(gz, mimetype='application/octet-stream')
     up = TARGET_BASE_URL.rstrip("/") + "/" + p
     try:
         r = req.get(up, timeout=60)
         if "fileinfo" in p:
-            patched = patch_fileinfo(r.text)
+            patched = patch_fileinfo(r.text, get_user_config(ip))
             if r.status_code == 200 and "cache_res," in patched and patched != r.text:
                 print(f"[CDN] {ip} fileinfo patched")
                 return Response(patched.encode(), mimetype='binary/octet-stream')
             if r.status_code != 200:
-                lf = build_fileinfo()
+                lf = build_fileinfo(get_user_config(ip))
                 if lf: return Response(lf.encode(), mimetype='binary/octet-stream')
         return Response(r.content, status=r.status_code, mimetype=r.headers.get('content-type', 'application/octet-stream'))
     except Exception as e:
@@ -533,6 +589,6 @@ def cdn(p):
 
 if __name__ == "__main__":
     load_data()
-    ensure_cache_res_gzip()
+    ensure_gz()
     print(f"[*] Gpt proxy on port {PORT}")
     app.run(host="0.0.0.0", port=PORT, debug=False, threaded=True)
